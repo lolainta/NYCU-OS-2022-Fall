@@ -86,18 +86,16 @@ void MainWindow::mainmenu(){
     auto submenu=menu->addMenu("New");
     submenu->addAction("New tab");
     menu->addMenu(submenu);
-
     menu->addAction("Exit");
-
     ui->menubar->addMenu(menu);
 
     auto transfer_menu=new QMenu("Transfer");
-    transfer_menu->addAction("");
-    transfer_menu->addAction("");
-    auto tr_submenu=transfer_menu->addMenu("");
+    transfer_menu->addAction("Process Queue");
+    transfer_menu->addAction("Default File exist action...");
+    auto tr_submenu=transfer_menu->addMenu("Transfer Type");
     tr_submenu->addAction("AUTO");
-    tr_submenu->addAction("");
-    tr_submenu->addAction("");
+    tr_submenu->addAction("ASCII");
+    tr_submenu->addAction("Binary");
     ui->menubar->addMenu(transfer_menu);
 }
 
