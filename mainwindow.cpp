@@ -110,7 +110,7 @@ QHBoxLayout*MainWindow::input_field(){
     userinput_field.push_back(new QLineEdit());
     userinput_field.push_back(new QLabel("Port: "));
     userinput_field.push_back(new QLineEdit());
-    userinput_field.push_back(new QPushButton("Connection"));
+    userinput_field.push_back(new QPushButton("Connect"));
     for(auto uf:userinput_field)
         input_horizon->addWidget(uf);
     return input_horizon;
