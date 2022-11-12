@@ -174,10 +174,11 @@ QWidget*MainWindow::status(){
     auto transfer_status=new QTabWidget();
     auto queue=new QTableWidget(1,6);
 
-    queue->setHorizontalHeaderLabels(*new QStringList());
+    queue->setHorizontalHeaderLabels(*new QStringList()<<"Server/Local file"<<"Direction"<<"Remote file"<<"Size"<<"Priority"<<"Status");
     queue->verticalHeader()->hide();
     transfer_status->setTabPosition(QTabWidget::South);
     transfer_status->addTab(queue,"Queued");
+    transfer_status->addTab(new QTabWidget(),"Failed");
 
     queue->horizontalHeader()->setStretchLastSection(true);
     queue->verticalHeader()->setStretchLastSection(true);
