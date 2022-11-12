@@ -85,7 +85,8 @@ void MainWindow::mainmenu(){
     auto submenu=menu->addMenu("New");
     submenu->addAction("New tab");
     menu->addMenu(submenu);
-    menu->addAction("Exit");
+    auto act=menu->addAction("Exit");
+    connect(act,SIGNAL(triggered()),this,SLOT(close()));
     ui->menubar->addMenu(menu);
 
     auto transfer_menu=new QMenu("Transfer");
