@@ -121,7 +121,7 @@ void MainWindow::local_view(){
     local_site->addTopLevelItem(first_layer);
     auto second_layer=new QTreeWidgetItem(*new QStringList()<<"bin",_DIR);
     first_layer->addChild(second_layer);
-    second_layer->addChild(new QTreeWidgetItem(*new QStringList()<<""<< "",_FILE));
+    second_layer->addChild(new QTreeWidgetItem(*new QStringList()<<"apt"<<"18824",_FILE));
 
     QTreeWidgetItemIterator local_it(local_site);
     while(*local_it){
