@@ -35,8 +35,7 @@ MainWindow::MainWindow(QWidget*parent):QMainWindow(parent),local_site(new QTreeW
     // set the centralwidget in ui to your widget.
     setCentralWidget(widget);
 }
-void MainWindow::remote_dir_combo_changed(const QString&text)
-{
+void MainWindow::remote_dir_combo_changed(const QString&text){
     QTreeWidgetItemIterator it(remote_site);
     while(*it){
         if((*it)->text(0)==text)
@@ -104,13 +103,13 @@ QHBoxLayout*MainWindow::input_field(){
     std::vector<QWidget*> userinput_field;
     userinput_field.push_back(new QLabel("Host: "));
     userinput_field.push_back(new QLineEdit());
-    userinput_field.push_back(new QLabel(""));
+    userinput_field.push_back(new QLabel("Username: "));
     userinput_field.push_back(new QLineEdit());
-    userinput_field.push_back(new QLabel(""));
+    userinput_field.push_back(new QLabel("Password: "));
     userinput_field.push_back(new QLineEdit());
-    userinput_field.push_back(new QLabel(""));
+    userinput_field.push_back(new QLabel("Port: "));
     userinput_field.push_back(new QLineEdit());
-    userinput_field.push_back(new QPushButton(""));
+    userinput_field.push_back(new QPushButton("Connection"));
     for(auto uf:userinput_field)
         input_horizon->addWidget(uf);
     return input_horizon;
