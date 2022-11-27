@@ -37,24 +37,20 @@ struct DirectoryFS{
     std::vector<DirectoryFS*> subDirectory;
 };
 
-DirectoryFS *root;
+DirectoryFS*root;
 
-DirectoryFS *currentDirectory;
+DirectoryFS*currentDirectory;
 
 // This is a recursive function, you should pass *root as dir when you first call it.
-DirectoryFS* FindDirectory(DirectoryFS* dir, std::string targetDirName)
-{
+DirectoryFS*FindDirectory(DirectoryFS*dir,std::string targetDirName){
     if(!dir)
         return nullptr;
-
-    if (dir->name == targetDirName)
+    if(dir->name==targetDirName)
         return dir;
-    
-    for (auto iter = dir->subDirectory.begin(); iter != dir->subDirectory.end(); iter++){
-        if((*iter)->name == targetDirName){
-            return *iter;
-        }
-        return FindDirectory(*iter, targetDirName);
+    for(auto iter=dir->subDirectory.begin();iter!=dir->subDirectory.end();iter++){
+        if((*iter)->name==targetDirName)
+            return*iter;
+        return FindDirectory(*iter,targetDirName);
     }
     return nullptr;
 }
@@ -68,94 +64,85 @@ DirectoryFS* FindDirectory(DirectoryFS* dir, std::string targetDirName)
     Remember, you need to change the return status in each RPC call to "OK" once you implement the 
     function!
 */
-class FtpServerServiceImpl final : public FtpServer::Service
-{
+class FtpServerServiceImpl final:public FtpServer::Service{
     // The second parameter means user's request message.
     // The third one means the output that server should response.
-    Status Login(ServerContext *context, const User *user, SessionID *sessionid) override
-    {
+    Status Login(ServerContext*context,const User*user,SessionID*sessionid)override{
         // Parse and log user's request in stdout
 
         // Set fake session id for response
 
         // Set currentDirectory to root since the user just login 
 
-        return Status(StatusCode::UNIMPLEMENTED, "Login Not implemented!");
+        return Status(StatusCode::UNIMPLEMENTED,"Login Not implemented!");
     }
 
-    Status Logout(ServerContext *context, const SessionID *sessionid, FtpStatus *status) override
-    {
+    Status Logout(ServerContext*context,const SessionID*sessionid,FtpStatus*status)override{
         // Parse and log user's request in stdout
 
         // Set fake status code for response
 
-        return Status(StatusCode::UNIMPLEMENTED, "Logout Not implemented!");
+        return Status(StatusCode::UNIMPLEMENTED,"Logout Not implemented!");
     }
 
-    Status ListDirectory(ServerContext *context, const SessionID *sessionid, Directory *directory) override
-    {
+    Status ListDirectory(ServerContext*context,const SessionID*sessionid,Directory*directory)override{
         // Parse and log user's request in stdout
-        std::cout << "List the directory of the session: " + sessionid->id() << std::endl;
+        std::cout<<"List the directory of the session: "+sessionid->id()<<std::endl;
 
         // Construct the response by traversing the pseudo file system
-        for(auto iter=currentDirectory->subDirectory.begin(); iter!=currentDirectory->subDirectory.end(); iter++){
-            DEntry *tmp;
-            tmp = directory->add_dentries();
+        for(auto iter=currentDirectory->subDirectory.begin();iter!=currentDirectory->subDirectory.end();iter++){
+            DEntry*tmp;
+            tmp=directory->add_dentries();
             tmp->set_name((*iter)->name);
             tmp->set_type(DEntry_PathType::DEntry_PathType_DIRECTORY);
             tmp->set_size(0);
         }
-
-        for(auto iter=currentDirectory->files.begin(); iter!=currentDirectory->files.end(); iter++){
-            DEntry *tmp;
-            tmp = directory->add_dentries();
+        for(auto iter=currentDirectory->files.begin();iter!=currentDirectory->files.end();iter++){
+            DEntry*tmp;
+            tmp=directory->add_dentries();
             tmp->set_name((*iter)->name);
             tmp->set_type(DEntry_PathType::DEntry_PathType_FILE);
             tmp->set_size((*iter)->size);
         }
-        
         return Status::OK;
     }
 
-    Status GetWorkingDirectory(ServerContext *context, const SessionID *sessionid, Path *path) override
-    {
+    Status GetWorkingDirectory(ServerContext*context,const SessionID*sessionid,Path*path)override{
         // Parse and log user's request in stdout
 
         // Set response path to the name of currentDirectory
 
-        return Status(StatusCode::UNIMPLEMENTED, "GetWorkingDirectory Not implemented!");
+        return Status(StatusCode::UNIMPLEMENTED,"GetWorkingDirectory Not implemented!");
     }
 
-    Status ChangeWorkingDirectory(ServerContext *context, const ChangeInfo *changeinfo, FtpStatus *status) override
-    {
+    Status ChangeWorkingDirectory(ServerContext*context,const ChangeInfo*changeinfo,FtpStatus*status)override{
         // Parse and log user's request in stdout
 
         // Change currentDirectory base on changeinfo by calling FindDirectory
 
-        return Status(StatusCode::UNIMPLEMENTED, "ChangeWorkingDirectory Not implemented!");
+        return Status(StatusCode::UNIMPLEMENTED,"ChangeWorkingDirectory Not implemented!");
     }
 };
 
-void ConstructFileSystem()
-{
-    root = new DirectoryFS();
-    root->name = "/";
+void ConstructFileSystem(){
+    root=new DirectoryFS();
+    root->name="/";
 
-    DirectoryFS *home;
-    home = new DirectoryFS();
-    home->name = "home";
+    DirectoryFS*home;
+    home=new DirectoryFS();
+    home->name="home";
 
-    DirectoryFS *Desktop;
-    Desktop = new DirectoryFS();
-    Desktop->name = "Desktop";
+    DirectoryFS*Desktop;
+    Desktop=new DirectoryFS();
+    Desktop->name="Desktop";
 
-    FileFS *file1, *file2;
-    file1 = new FileFS();
-    file2 = new FileFS();
-    file1->name = "README.md";
-    file1->size = 128;
-    file2->name = "SOS.txt";
-    file2->size = 1024;
+    FileFS*file1,*file2;
+    file1=new FileFS();
+    file2=new FileFS();
+    file1->name="README.md";
+    file1->size=128;
+    file2->name="SOS.txt";
+    file2->size=1024;
     Desktop->files.push_back(file1);
     Desktop->files.push_back(file2);
 
@@ -163,25 +150,17 @@ void ConstructFileSystem()
     root->subDirectory.push_back(home);
 }
 
-void DeconstructFileSystem(DirectoryFS *dir)
-{
-    if(!dir){
+void DeconstructFileSystem(DirectoryFS*dir){
+    if(!dir)
         return;
-    }
-
-    for (auto iter=dir->files.begin(); iter!=dir->files.end(); iter++){
+    for(auto iter=dir->files.begin();iter!=dir->files.end();iter++)
         delete *iter;
-    }
-
-    for (auto iter=dir->subDirectory.begin(); iter!=dir->subDirectory.end(); iter++){
+    for(auto iter=dir->subDirectory.begin();iter!=dir->subDirectory.end();iter++)
         DeconstructFileSystem(*iter);
-    }
-
     delete dir;
 }
 
-void RunServer()
-{
+void RunServer(){
     std::string server_address("0.0.0.0:50051");
     FtpServerServiceImpl service;
 
@@ -190,32 +169,30 @@ void RunServer()
     ServerBuilder builder;
 
     // Listen on the given address without any authentication mechanism.
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address,grpc::InsecureServerCredentials());
 
     // Register "service" as the instance through which we'll communicate with
     // clients. In this case it corresponds to an *synchronous* service.
     builder.RegisterService(&service);
 
     // Finally assemble the server.
-    std::unique_ptr<Server> server(builder.BuildAndStart());
-    std::cout << "Server listening on " << server_address << std::endl;
+    std::unique_ptr<Server>server(builder.BuildAndStart());
+    std::cout<<"Server listening on "<<server_address<<std::endl;
 
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
     server->Wait();
 }
 
-void signal_handler(int signal)
-{
+void signal_handler(int signal){
     DeconstructFileSystem(root);
     exit(signal);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc,char **argv){
     ConstructFileSystem();
 
-    signal (SIGINT, signal_handler);
+    signal(SIGINT,signal_handler);
 
     RunServer();
 
