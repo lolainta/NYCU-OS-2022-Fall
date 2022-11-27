@@ -1,9 +1,13 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "client.h"
+#include <iostream>
+
 enum type_F{
     _DIR=0,
     _FILE=1
 };
+
 MainWindow::MainWindow(QWidget*parent):QMainWindow(parent),local_site(new QTreeWidget),local_memo(new QComboBox),local_memo_dir(new QStringList),remote_site(new QTreeWidget),remote_memo(new QComboBox),remote_memo_dir(new QStringList),local_file_view(new QTreeWidget),remote_file_view(new QTreeWidget),ui(new Ui::MainWindow){
     ui->setupUi(this);
 
@@ -16,7 +20,7 @@ MainWindow::MainWindow(QWidget*parent):QMainWindow(parent),local_site(new QTreeW
     auto dir_horizon=new QHBoxLayout();
 
     local_view();
-    remote_view();
+    remote_view_init();
     dir_horizon->addWidget(local_site);
     dir_horizon->addWidget(remote_site);
     // file view
@@ -35,6 +39,16 @@ MainWindow::MainWindow(QWidget*parent):QMainWindow(parent),local_site(new QTreeW
     // set the centralwidget in ui to your widget.
     setCentralWidget(widget);
 }
+
+void MainWindow::closeEvent(QCloseEvent*event){
+    if(ftp){
+        ftp->LogoutTest(currentSession);
+        delete ftp;
+        ftp=nullptr;
+    }
+    event->accept();
+}
+
 void MainWindow::remote_dir_combo_changed(const QString&text){
     QTreeWidgetItemIterator it(remote_site);
     while(*it){
@@ -50,6 +64,7 @@ void MainWindow::remote_dir_combo_changed(const QString&text){
     }
     remote_file_view->currentItem()->setExpanded(true);
 }
+
 void MainWindow::remote_click_item_inDir(QTreeWidgetItem*item){
     if(!remote_memo_dir->contains(item->text(0))){
         remote_memo->addItem(item->text(0));
@@ -57,6 +72,25 @@ void MainWindow::remote_click_item_inDir(QTreeWidgetItem*item){
     }
     remote_memo->setCurrentText(item->text(0));
 }
+
+void MainWindow::remote_site_click_item(QTreeWidgetItem*item){
+    if(ftp){
+        std::string response=ftp->ChangeWorkingDirectoryTest(currentSession,item->text(0).toStdString());
+        if(response=="0"){
+            std::vector<FtpClient::DirectoryVec> listResponse=ftp->ListDirectoryTest(currentSession);
+            item->takeChildren();
+            for(std::vector<FtpClient::DirectoryVec>::iterator iter=listResponse.begin();iter!=listResponse.end();iter++){
+                if((*iter).type=="_DIR"){
+                    auto temp=new QTreeWidgetItem(*new QStringList()<<(*iter).name.c_str(),_DIR);
+                    item->addChild(temp);
+                }
+            }
+            item->setExpanded(true);
+            remote_file_view_update(listResponse);
+        }
+    }
+}
+
 void MainWindow::dir_combo_changed(const QString&text){
     QTreeWidgetItemIterator it(local_site);
     while(*it){
@@ -85,10 +119,13 @@ void MainWindow::mainmenu(){
     auto submenu=menu->addMenu("New");
     submenu->addAction("New tab");
     menu->addMenu(submenu);
-    auto act=menu->addAction("Exit");
-    connect(act,SIGNAL(triggered()),this,SLOT(close()));
+    auto actLogout=menu->addAction("Logout");
+    auto actExit=menu->addAction("Exit");
     ui->menubar->addMenu(menu);
 
+    connect(actLogout,SIGNAL(triggered()),this,SLOT(logout_event()));
+    connect(actExit,SIGNAL(triggered()),this,SLOT(close()));
+    
     auto transfer_menu=new QMenu("Transfer");
     transfer_menu->addAction("Process Queue");
     transfer_menu->addAction("Default File exist action...");
@@ -116,6 +153,37 @@ QHBoxLayout*MainWindow::input_field(){
     return input_horizon;
 }
 
+void MainWindow::connect_event(){
+    std::string target_str=connection_info[0]->text().toStdString()+":"+connection_info[3]->text().toStdString();
+    if(ftp){
+        // std::cout<<"close ftp"<<std::endl;
+        ftp->LogoutTest(currentSession);
+        delete ftp;
+        ftp=nullptr;
+        remote_view_clear();
+    }
+    ftp=new FtpClient(grpc::CreateChannel(target_str,grpc::InsecureChannelCredentials()));
+    if(ftp){
+        currentSession=ftp->LoginTest(connection_info[1]->text().toStdString(),connection_info[2]->text().toStdString());
+        if(currentSession!="0"){
+            std::string workingDirectory=ftp->GetWorkingDirectoryTest(currentSession);
+            std::vector<FtpClient::DirectoryVec> listResponse=ftp->ListDirectoryTest(currentSession);
+            remote_view_update(listResponse);
+        }
+    }else
+        std::cerr<<"Create channel to "<<target_str<<"failed!"<<std::endl;
+}
+
+void MainWindow::logout_event(){
+    if(ftp){
+        // std::cout<<"close ftp"<<std::endl;
+        ftp->LogoutTest(currentSession);
+        delete ftp;
+        ftp=nullptr;
+        remote_view_clear();
+    }
+}
+
 void MainWindow::local_view(){
     local_site->header()->hide();
     auto first_layer=new QTreeWidgetItem(*new QStringList()<<"usr",_DIR);
@@ -136,13 +204,41 @@ void MainWindow::local_view(){
 
     connect(local_file_view,SIGNAL(itemClicked(QTreeWidgetItem*,int)),this,SLOT(click_item_inDir(QTreeWidgetItem*)));
 }
-void MainWindow::remote_view(){
+void MainWindow::remote_view_init(){
     remote_site->header()->hide();
-    auto remote_first_layer=new QTreeWidgetItem(*new QStringList()<<"For_Windows",_DIR);
+    auto remote_first_layer=new QTreeWidgetItem(*new QStringList()<<"/",_DIR);
     remote_site->addTopLevelItem(remote_first_layer);
-    auto remote_second=new QTreeWidgetItem(*new QStringList()<<"Anti_Virus",_DIR);
-    remote_first_layer->addChild(remote_second);
-    remote_second->addChild(new QTreeWidgetItem(*new QStringList()<<"Kaspersky"<<"42881",_FILE));
+
+    remote_file_view->setHeaderLabels(*new QStringList()<<"Filename"<<"Filesize");
+
+    connect(remote_site,SIGNAL(itemClicked(QTreeWidgetItem*,int)),this,SLOT(remote_site_click_item(QTreeWidgetItem*)));
+    connect(remote_file_view,SIGNAL(itemClicked(QTreeWidgetItem*,int)),this,SLOT(remote_click_item_inDir(QTreeWidgetItem*)));
+
+}
+
+void MainWindow::remote_view_clear(){
+    remote_site->clear();
+    remote_file_view->clear();
+
+    remote_site->header()->hide();
+    auto remote_first_layer=new QTreeWidgetItem(*new QStringList()<<"/",_DIR);
+    remote_site->addTopLevelItem(remote_first_layer);
+
+    remote_file_view->addTopLevelItem(remote_first_layer->clone());
+}
+
+void MainWindow::remote_view_update(std::vector<FtpClient::DirectoryVec> directoryVec){
+    auto first_layer=remote_site->topLevelItem(0);
+    for(std::vector<FtpClient::DirectoryVec>::iterator iter=directoryVec.begin();iter!=directoryVec.end();iter++){
+        if((*iter).type=="_DIR"){
+            auto temp=new QTreeWidgetItem(*new QStringList()<<(*iter).name.c_str(),_DIR);
+            first_layer->addChild(temp);
+        }else if((*iter).type=="_FILE"){
+            auto temp=new QTreeWidgetItem(*new QStringList()<<(*iter).name.c_str()<<std::to_string((*iter).size).c_str(),_FILE);
+            first_layer->addChild(temp);
+        }
+    }
+    remote_file_view->clear();
 
     QTreeWidgetItemIterator remote_it(remote_site);
     while(*remote_it){
@@ -150,12 +246,23 @@ void MainWindow::remote_view(){
             (*remote_it)->setHidden(true);
         ++remote_it;
     }
-    connect(remote_site,SIGNAL(itemClicked(QTreeWidgetItem*,int)),this,SLOT(remote_click_item_inDir(QTreeWidgetItem*)));
-    remote_file_view->setHeaderLabels(*new QStringList()<<"Filename"<<"Filesize");
-    remote_file_view->addTopLevelItem(remote_first_layer->clone());
-
-    connect(remote_file_view,SIGNAL(itemClicked(QTreeWidgetItem*,int)),this,SLOT(remote_click_item_inDir(QTreeWidgetItem*)));
 }
+
+void MainWindow::remote_file_view_update(std::vector<FtpClient::DirectoryVec> directoryVec){
+    remote_file_view->clear();
+    for(std::vector<FtpClient::DirectoryVec>::iterator iter=directoryVec.begin();iter!=directoryVec.end();iter++){
+        if((*iter).type=="_DIR"){
+            // char name[] = (*iter).name;
+            auto temp=new QTreeWidgetItem(*new QStringList()<<(*iter).name.c_str(),_DIR);
+            remote_file_view->addTopLevelItem(temp);
+        }else if((*iter).type=="_FILE"){
+            auto temp=new QTreeWidgetItem(*new QStringList()<<(*iter).name.c_str()<<std::to_string((*iter).size).c_str(),_FILE);
+            remote_file_view->addTopLevelItem(temp);
+        }
+    }
+
+}
+
 QHBoxLayout*MainWindow::memo_box(){
     auto memo_horizon=new QHBoxLayout();
     local_memo->addItems(*local_memo_dir);
@@ -171,19 +278,27 @@ QHBoxLayout*MainWindow::memo_box(){
     connect(remote_memo,SIGNAL(currentTextChanged(QString)),this,SLOT(remote_dir_combo_changed(QString)));
     return memo_horizon;
 }
+
 QWidget*MainWindow::status(){
     auto transfer_status=new QTabWidget();
     auto queue=new QTableWidget(1,6);
+    auto failed=new QTableWidget(1,6);
 
     queue->setHorizontalHeaderLabels(*new QStringList()<<"Server/Local file"<<"Direction"<<"Remote file"<<"Size"<<"Priority"<<"Status");
     queue->verticalHeader()->hide();
     transfer_status->setTabPosition(QTabWidget::South);
     transfer_status->addTab(queue,"Queued");
-    transfer_status->addTab(new QTabWidget(),"Failed");
 
     queue->horizontalHeader()->setStretchLastSection(true);
     queue->verticalHeader()->setStretchLastSection(true);
 
+    failed->setHorizontalHeaderLabels(*new QStringList()<<"Server/Local file"<<"Direction"<<"Remote file"<<"Size"<<"Priority"<<"Status");
+    failed->verticalHeader()->hide();
+//    transfer_status->setTabPosition(QTabWidget::South);
+    transfer_status ->addTab(failed,"Failed");
+
+    failed->horizontalHeader()->setStretchLastSection(true);
+    failed->verticalHeader()->setStretchLastSection(true);
     return transfer_status;
 }
 MainWindow::~MainWindow(){

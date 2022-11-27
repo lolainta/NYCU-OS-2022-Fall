@@ -14,7 +14,8 @@
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QHeaderView>
-
+#include <QCloseEvent>
+#include "client.h"
 QT_BEGIN_NAMESPACE
 namespace Ui{
     class MainWindow;
@@ -40,16 +41,26 @@ public:
     void mainmenu();
     QHBoxLayout*input_field();
     void local_view();
-    void remote_view();
+    void remote_view_init();
+    void remote_view_clear();
+    void remote_view_update(std::vector<FtpClient::DirectoryVec> directoryVec);
+    void remote_file_view_update(std::vector<FtpClient::DirectoryVec> directoryVec);
+    void closeEvent(QCloseEvent*event);
     QHBoxLayout*memo_box();
     QWidget*status();
 
 public slots:
     void click_item_inDir(QTreeWidgetItem*);
+    void connect_event();
+    void logout_event();
     void dir_combo_changed(const QString&);
     void remote_click_item_inDir(QTreeWidgetItem*);
+    void remote_site_click_item(QTreeWidgetItem*);
     void remote_dir_combo_changed(const QString&);
 private:
     Ui::MainWindow*ui;
+    std::vector<QLineEdit*> connection_info;
+    FtpClient*ftp=nullptr;
+    std::string currentSession;
 };
 #endif // MAINWINDOW_H
