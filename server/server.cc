@@ -104,6 +104,7 @@ class FtpServerServiceImpl final:public FtpServer::Service{
             tmp->set_type(DEntry_PathType::DEntry_PathType_FILE);
             tmp->set_size((*iter)->size);
         }
+
         return Status::OK;
     }
 
@@ -163,7 +164,6 @@ void DeconstructFileSystem(DirectoryFS*dir){
 void RunServer(){
     std::string server_address("0.0.0.0:50051");
     FtpServerServiceImpl service;
-
     grpc::EnableDefaultHealthCheckService(true);
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
@@ -191,10 +191,7 @@ void signal_handler(int signal){
 
 int main(int argc,char **argv){
     ConstructFileSystem();
-
     signal(SIGINT,signal_handler);
-
     RunServer();
-
     return 0;
 }
