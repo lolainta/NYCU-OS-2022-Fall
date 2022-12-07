@@ -69,20 +69,25 @@ class FtpServerServiceImpl final:public FtpServer::Service{
     // The third one means the output that server should response.
     Status Login(ServerContext*context,const User*user,SessionID*sessionid)override{
         // Parse and log user's request in stdout
+        std::cout<<"User "<<user->name()<<" login with pwd: "<<user->pwd()<<std::endl;
 
         // Set fake session id for response
+        sessionid->set_id("54321");
 
         // Set currentDirectory to root since the user just login 
-
-        return Status(StatusCode::UNIMPLEMENTED,"Login Not implemented!");
+        currentDirectory=root;
+        
+        return Status::OK;
     }
 
     Status Logout(ServerContext*context,const SessionID*sessionid,FtpStatus*status)override{
         // Parse and log user's request in stdout
+        std::cout<<"Logout session: "<<sessionid->id()<<std::endl;
 
         // Set fake status code for response
+        status->set_code(0);
 
-        return Status(StatusCode::UNIMPLEMENTED,"Logout Not implemented!");
+        return Status::OK;
     }
 
     Status ListDirectory(ServerContext*context,const SessionID*sessionid,Directory*directory)override{
@@ -110,18 +115,23 @@ class FtpServerServiceImpl final:public FtpServer::Service{
 
     Status GetWorkingDirectory(ServerContext*context,const SessionID*sessionid,Path*path)override{
         // Parse and log user's request in stdout
+        std::cout<<"Get the working directory of the session: "<<sessionid->id()<<std::endl;
 
         // Set response path to the name of currentDirectory
+        path->set_path(currentDirectory->name+FindDirectory(root,currentDirectory->name)->name);
 
-        return Status(StatusCode::UNIMPLEMENTED,"GetWorkingDirectory Not implemented!");
+        return Status::OK;
     }
 
     Status ChangeWorkingDirectory(ServerContext*context,const ChangeInfo*changeinfo,FtpStatus*status)override{
         // Parse and log user's request in stdout
+        std::cout<<"The working directory of the session: "<<changeinfo->sessionid().id()<<" has changed to "<<changeinfo->path().path()<<std::endl;
 
         // Change currentDirectory base on changeinfo by calling FindDirectory
+        currentDirectory=FindDirectory(root,changeinfo->path().path());
+        status->set_code(0);
 
-        return Status(StatusCode::UNIMPLEMENTED,"ChangeWorkingDirectory Not implemented!");
+        return Status::OK;
     }
 };
 
