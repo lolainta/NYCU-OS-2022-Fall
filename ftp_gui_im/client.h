@@ -29,6 +29,8 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
+using tiny_ftp::FileInfo;
+using tiny_ftp::FileChunk;
 using tiny_ftp::ChangeInfo;
 using tiny_ftp::DEntry;
 using tiny_ftp::DEntry_PathType;
@@ -49,12 +51,21 @@ public:
     };
     // Assembles the client's payload, sends it and presents the response back
     // from the server.
-    std::string LoginTest(std::string userName,std::string userPasswd);
-    std::string LogoutTest(std::string sessionIdStr);
-    std::vector<FtpClient::DirectoryVec> ListDirectoryTest(std::string sessionIdStr);
-    std::string GetWorkingDirectoryTest(std::string sessionIdStr);
-    std::string ChangeWorkingDirectoryTest(std::string sessionIdStr,std::string directory);
+
+    std::vector<FtpClient::DirectoryVec>ChangeDirectory(std::string);
+    std::vector<FtpClient::DirectoryVec>ListCurrentDirectory();
+
+    std::string LoginTest(std::string,std::string);
+    std::string LogoutTest(std::string);
+    std::vector<FtpClient::DirectoryVec>ListDirectoryTest(std::string);
+    std::string GetWorkingDirectoryTest(std::string);
+    std::string ChangeWorkingDirectoryTest(std::string,std::string);
+
+    std::string DownloadSmallFileTest(std::string,std::string);
+    std::string UploadSmallFileTest(std::string,std::string);
+
 private:
-    std::unique_ptr<FtpServer::Stub> stub_;
+    std::unique_ptr<FtpServer::Stub>stub_;
+    std::string WorkingDirectory;
 };
 #endif

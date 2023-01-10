@@ -15,6 +15,9 @@ service FtpServer{
   rpc GetWorkingDirectory(SessionID) returns(Path){}
   rpc ChangeWorkingDirectory(ChangeInfo) returns(FtpStatus){}
 
+  // Small File Transer
+  rpc DownloadSmallFile(ChangeInfo) returns(FileChunk){}
+  rpc UploadSmallFile(FileInfo) returns(FtpStatus){}
 }
 
 // Define rpc message format
@@ -52,4 +55,15 @@ message Path{
 message ChangeInfo{
   required SessionID sessionid=1;
   required Path path=2;
+}
+
+message FileChunk{
+  required int32 size=1;
+  required uint64 offset=2;
+  required bytes data=3;
+}
+
+message FileInfo{
+  required ChangeInfo changeinfo=1;
+  required FileChunk filechunk=2;
 }

@@ -17,6 +17,7 @@
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
+SAN = -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize=null -fno-sanitize=alignment
 CPPFLAGS += `pkg-config --cflags protobuf grpc` 
 CXXFLAGS += -std=c++11 -I../protos
 ifeq ($(SYSTEM),Darwin)

@@ -15,6 +15,7 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QCloseEvent>
+#include <QTimer>
 #include "client.h"
 QT_BEGIN_NAMESPACE
 namespace Ui{
@@ -40,27 +41,33 @@ public:
     ~MainWindow();
     void mainmenu();
     QHBoxLayout*input_field();
-    void local_view();
+    void local_view_init();
+    void local_view_clear();
+    void local_view_update(std::vector<FtpClient::DirectoryVec>);
+    void local_file_view_update(std::vector<FtpClient::DirectoryVec>);
     void remote_view_init();
     void remote_view_clear();
-    void remote_view_update(std::vector<FtpClient::DirectoryVec> directoryVec);
-    void remote_file_view_update(std::vector<FtpClient::DirectoryVec> directoryVec);
-    void closeEvent(QCloseEvent*event);
+    void remote_view_update(std::vector<FtpClient::DirectoryVec>);
+    void remote_file_view_update(std::vector<FtpClient::DirectoryVec>);
+    void closeEvent(QCloseEvent*);
     QHBoxLayout*memo_box();
     QWidget*status();
 
 public slots:
-    void click_item_inDir(QTreeWidgetItem*);
     void connect_event();
     void logout_event();
     void dir_combo_changed(const QString&);
+    void site_click_item(QTreeWidgetItem*);
+    void click_item_inDir(QTreeWidgetItem*);
     void remote_click_item_inDir(QTreeWidgetItem*);
     void remote_site_click_item(QTreeWidgetItem*);
     void remote_dir_combo_changed(const QString&);
 private:
     Ui::MainWindow*ui;
-    std::vector<QLineEdit*> connection_info;
+    std::vector<QLineEdit*>connection_info;
     FtpClient*ftp=nullptr;
     std::string currentSession;
+    int local_ClickedState;
+    int remote_ClickedState;
 };
 #endif // MAINWINDOW_H
